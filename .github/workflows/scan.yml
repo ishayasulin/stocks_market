@@ -1,0 +1,84 @@
+name: Scan markets
+
+# Runs the agent, publishes the website, and emails you when something is worth a look.
+on:
+  schedule:
+    - cron: "17 5-23/3 * * 1-5"   # every 3 hours, Monday to Friday (UTC)
+    - cron: "17 8 * * 0,6"        # once a day on weekends
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "full = rebuild everything, quick = prices only, auto = decide"
+        default: auto
+        type: choice
+        options: [auto, full, quick]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore the previous scan (kept on the "data" branch)
+        run: |
+          mkdir -p site/data
+          if git fetch --depth=1 origin data 2>/dev/null; then
+            git archive FETCH_HEAD | tar -x -C site/data
+          else
+            echo "First run: no earlier data."
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: agent/requirements.txt
+
+      - run: pip install -r agent/requirements.txt
+
+      - name: Run the agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: |
+          python -m agent.run --mode "${{ inputs.mode || 'auto' }}" || {
+            test -f site/data/data.json || exit 1
+            echo "::warning::The scan failed. Publishing the previous data."
+          }
+
+      - name: Save this scan for next time
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd site/data
+          git init -q -b data
+          git add -A
+          git -c user.name="stock-agent" -c user.email="actions@users.noreply.github.com" commit -qm "Latest scan"
+          git push -qf "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+          rm -rf .git
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
