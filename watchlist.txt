@@ -1,3 +1,5 @@
 # Companies you own or want the agent to follow closely. One Yahoo Finance ticker per line.
 # The agent emails you if one of these shows a reason to sell or review.
 # Examples: AAPL (US), TEVA.TA (Tel Aviv), ASML.AS (Amsterdam), SAP.DE (Germany)
+
+SMR
