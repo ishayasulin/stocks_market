@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quality Stock Scout</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand">Quality Stock Scout<small id="updated">Loading live data…</small></div>
+  <nav id="nav">
+    <a href="#today">Today</a><a href="#explore">Explore</a><a href="#portfolio">My buys</a>
+    <a href="#alerts">Alerts<span class="dot" id="dot" hidden></span></a><a href="#learn">Learn</a>
+  </nav>
+</div></header>
+<div class="wrap">
+  <main id="view"><div class="panel"><p class="muted">Loading the latest scan…</p></div></main>
+  <footer>Prices and company numbers come from Yahoo Finance and can be delayed or wrong. This site is a learning tool that
+  screens companies by rules. It is not financial advice. Read about a company yourself before you invest.</footer>
+</div>
+<dialog id="pop"><div class="in" id="popin"></div></dialog>
+<script src="learn.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
